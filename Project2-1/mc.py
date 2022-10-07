@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import re
 import numpy as np
 import random
 from collections import defaultdict
+
 #-------------------------------------------------------------------------
 '''
     Monte-Carlo
@@ -34,7 +36,10 @@ def initial_policy(observation):
     # get parameters from observation
     score, dealer_score, usable_ace = observation
     # action
-
+    if score >= 20:
+        action = 0
+    else:
+        action = 1
     ############################
     return action
 
@@ -68,41 +73,41 @@ def mc_prediction(policy, env, n_episodes, gamma = 1.0):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # loop each episode
-
+    
+    for episode in range(0,n_episodes):
         # initialize the episode
-
+        current_obs = env.reset()
         # generate empty episode list
-
+        states = []
+        episode_list = []
         # loop until episode generation is done
-
-
+        while True:
             # select an action
-
+            action = initial_policy(current_obs)
             # return a reward and new state
-
+            obs,r,done,info,prob = env.step(action)
             # append state, action, reward to episode
-
+            episode_list.append((obs,action,r))
+            states.append(obs)
             # update state to new state
-
-
-
-
+            current_obs = obs
+            if done:
+                break
         # loop for each step of episode, t = T-1, T-2,...,0
-
+        for step in range(len(episode_list)-1):
             # compute G
-
+            reward = episode_list[step][2]
+            state = episode_list[step][0]
+            # returns_sum[episode] += reward
             # unless state_t appears in states
-
+            if state not in states:
                 # update return_count
-
+                returns_count[state] += 1
                 # update return_sum
-
+                returns_sum[state] += reward
                 # calculate average return for this state over all sampled episodes
-
-
-
+                V[state] += (returns_sum[state] - V[state])/returns_count[state]
     ############################
-
     return V
 
 def epsilon_greedy(Q, state, nA, epsilon = 0.1):
