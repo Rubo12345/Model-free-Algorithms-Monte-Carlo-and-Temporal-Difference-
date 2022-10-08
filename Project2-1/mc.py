@@ -5,6 +5,8 @@ import numpy as np
 import random
 from collections import defaultdict
 
+from torch import argmax
+
 #-------------------------------------------------------------------------
 '''
     Monte-Carlo
@@ -112,7 +114,6 @@ def mc_prediction(policy, env, n_episodes, gamma = 1.0):
 
 def epsilon_greedy(Q, state, nA, epsilon = 0.1):
     """Selects epsilon-greedy action for supplied state.
-
     Parameters:
     -----------
     Q: dict()
@@ -136,10 +137,18 @@ def epsilon_greedy(Q, state, nA, epsilon = 0.1):
     """
     ############################
     # YOUR IMPLEMENTATION HERE #
-
-
-
-
+    q = []
+    for action in range(0,nA):
+        q.append(Q[state][action])
+    policy = np.argmax(q) 
+    # greedy_prob = 1 - epsilon + epsilon/len(q)
+    # random_prob = epsilon/len(q)
+    greedy_prob = random.uniform(0,1)
+    random_prob = epsilon
+    if greedy_prob > random_prob:
+        action = policy
+    else:
+        action = random.randint(0,3) 
     ############################
     return action
 
