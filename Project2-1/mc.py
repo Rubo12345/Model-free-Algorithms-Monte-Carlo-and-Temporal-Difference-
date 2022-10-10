@@ -75,41 +75,38 @@ def mc_prediction(policy, env, n_episodes, gamma = 1.0):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # loop each episode
-    
     for episode in range(0,n_episodes):
         # initialize the episode
         current_obs = env.reset()
         # generate empty episode list
-        states = []
         episode_list = []
         # loop until episode generation is done
         while True:
             # select an action
-            action = initial_policy(current_obs)
+            action = policy(current_obs)
             # return a reward and new state
-            obs,r,done,info,prob = env.step(action)
+            new_obs,r,done,info,prob = env.step(action)
             # append state, action, reward to episode
-            episode_list.append((obs,action,r))
-            states.append(obs)
+            episode_list.append((current_obs,action,r))
             # update state to new state
-            current_obs = obs
             if done:
                 break
+            current_obs = new_obs
         # loop for each step of episode, t = T-1, T-2,...,0
-        for step in range(len(episode_list)-1):
+        first_states = []
+        for index,(state,action,reward) in enumerate(episode_list):
             # compute G
-            reward = episode_list[step][2]
-            state = episode_list[step][0]
-            # returns_sum[episode] += reward
+            G = sum([epi[2]*(gamma**idx) for idx,epi in enumerate(episode_list[index:])])
             # unless state_t appears in states
-            if state not in states:
+            if state not in first_states:
+                first_states.append(state)
                 # update return_count
-                returns_count[state] += 1
+                returns_count[state] += 1.0
                 # update return_sum
-                returns_sum[state] += reward
+                returns_sum[state] += G
                 # calculate average return for this state over all sampled episodes
-                V[state] += (returns_sum[state] - V[state])/returns_count[state]
-    ############################
+                V[state] = returns_sum[state]/returns_count[state]
+    ###########################
     return V
 
 def epsilon_greedy(Q, state, nA, epsilon = 0.1):
@@ -141,8 +138,6 @@ def epsilon_greedy(Q, state, nA, epsilon = 0.1):
     for action in range(0,nA):
         q.append(Q[state][action])
     policy = np.argmax(q) 
-    # greedy_prob = 1 - epsilon + epsilon/len(q)
-    # random_prob = epsilon/len(q)
     greedy_prob = random.uniform(0,1)
     random_prob = epsilon
     if greedy_prob > random_prob:
@@ -182,41 +177,43 @@ def mc_control_epsilon_greedy(env, n_episodes, gamma = 1.0, epsilon = 0.1):
     # a nested dictionary that maps state -> (action -> action-value)
     # e.g. Q[state] = np.darrary(nA)
     Q = defaultdict(lambda: np.zeros(env.action_space.n))
-
+    nA = env.action_space.n
     ############################
     # YOUR IMPLEMENTATION HERE #
-
+    for episode in range(0,n_episodes):
         # define decaying epsilon
-
-
+        if episode > 0:
+            epsilon = epsilon-(0.1/n_episodes)
 
         # initialize the episode
-
+        current_obs = env.reset()
         # generate empty episode list
-
+        episode_list = []
         # loop until one episode generation is done
-
-
+        while True:
             # get an action from epsilon greedy policy
-
+            action = epsilon_greedy(Q, current_obs, nA, epsilon)
             # return a reward and new state
-
+            new_obs,r,done,info,prob = env.step(action)
             # append state, action, reward to episode
-
+            episode_list.append((current_obs,action,r))
             # update state to new state
-
-
+            if done:
+                break
+            current_obs = new_obs
 
         # loop for each step of episode, t = T-1, T-2, ...,0
-
+        first_states = []
+        for index,(state,action,reward) in enumerate(episode_list):
             # compute G
-
+            G = sum([epi[2]*(gamma**idx) for idx,epi in enumerate(episode_list[index:])])
             # unless the pair state_t, action_t appears in <state action> pair list
-
+            if (state,action) not in first_states:
+                first_states.append((state,action))
                 # update return_count
-
+                returns_count[state] += 1.0
                 # update return_sum
-
+                returns_sum[state] += G
                 # calculate average return for this state over all sampled episodes
-
+                Q[state][action] = returns_sum[state]/returns_count[state]
     return Q
