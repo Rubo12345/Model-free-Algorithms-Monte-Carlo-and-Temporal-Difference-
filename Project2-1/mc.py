@@ -134,16 +134,10 @@ def epsilon_greedy(Q, state, nA, epsilon = 0.1):
     """
     ############################
     # YOUR IMPLEMENTATION HERE #
-    q = []
-    for action in range(0,nA):
-        q.append(Q[state][action])
-    policy = np.argmax(q) 
-    greedy_prob = random.uniform(0,1)
-    random_prob = epsilon
-    if greedy_prob > random_prob:
-        action = policy
-    else:
-        action = random.randint(0,3) 
+    policy = np.argmax(Q[state])
+    greedy_prob = np.ones(nA)*epsilon/nA
+    greedy_prob[policy] += 1 - epsilon
+    action = np.random.choice(np.arange(len(Q[state])),p = greedy_prob)
     ############################
     return action
 
@@ -184,13 +178,12 @@ def mc_control_epsilon_greedy(env, n_episodes, gamma = 1.0, epsilon = 0.1):
         # define decaying epsilon
         if episode > 0:
             epsilon = epsilon-(0.1/n_episodes)
-
         # initialize the episode
         current_obs = env.reset()
         # generate empty episode list
         episode_list = []
         # loop until one episode generation is done
-        while True:
+        while True:                     
             # get an action from epsilon greedy policy
             action = epsilon_greedy(Q, current_obs, nA, epsilon)
             # return a reward and new state
@@ -203,17 +196,17 @@ def mc_control_epsilon_greedy(env, n_episodes, gamma = 1.0, epsilon = 0.1):
             current_obs = new_obs
 
         # loop for each step of episode, t = T-1, T-2, ...,0
-        first_states = []
+        first_states_actions = []
         for index,(state,action,reward) in enumerate(episode_list):
             # compute G
-            G = sum([epi[2]*(gamma**idx) for idx,epi in enumerate(episode_list[index:])])
+            G = sum((epi[2]*(gamma**idx) for idx,epi in enumerate(episode_list[index:])))
             # unless the pair state_t, action_t appears in <state action> pair list
-            if (state,action) not in first_states:
-                first_states.append((state,action))
+            if (state,action) not in first_states_actions:
+                first_states_actions.append((state,action))
                 # update return_count
-                returns_count[state] += 1.0
+                returns_count[(state,action)] += 1.0
                 # update return_sum
-                returns_sum[state] += G
+                returns_sum[(state,action)] += G
                 # calculate average return for this state over all sampled episodes
-                Q[state][action] = returns_sum[state]/returns_count[state]
+                Q[state][action] = returns_sum[(state,action)]/returns_count[(state,action)]
     return Q
