@@ -69,3 +69,4 @@ def test_q_learning():
     print(policy_q)
     assert np.allclose(policy_q.shape, (4, 12))
     assert np.allclose(policy_q[2:, ], test_policy)
+
